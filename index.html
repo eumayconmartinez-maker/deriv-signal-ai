@@ -60,7 +60,92 @@ main{max-width:760px;margin:auto;padding:18px 14px 32px}.head{display:flex;align
   function setConn(text,on=false){$("connection").innerHTML=`<span class="dot ${on?"on":""}"></span>${text}`;}
   function send(obj){if(state.ws && state.ws.readyState===WebSocket.OPEN)state.ws.send(JSON.stringify(obj));}
   function disconnect(){if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(e){}}state.ws=null;state.connected=false;state.contractChecked=false;state.contractAvailable=false;setConn("Desconectado");$("connect").textContent="Conectar aos dados públicos";$("contractStatus").textContent="Contrato Rise/Fall: ainda não verificado.";}
-  function connect() {
+  function connect() {    if (state.ws) {
+      try { state.ws.close(); } catch (e) {}
+    }
+
+    state.connected = false;
+    state.contractChecked = false;
+    state.contractAvailable = false;
+
+    setConn("Conectando...", false);
+    $("connect").textContent = "Conectando...";
+
+    const endpoint = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+    const ws = new WebSocket(endpoint);
+    state.ws = ws;
+
+    ws.onopen = function () {
+      state.connected = true;
+      setConn("Conectado — buscando ativo...", true);
+      $("connect").textContent = "Conectado";
+      ws.send(JSON.stringify({
+        active_symbols: "brief",
+        req_id: ++state.req
+      }));
+    };
+
+    ws.onmessage = function (event) {
+      let data;
+
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+
+      if (data.error) {
+        setConn("Erro: " + data.error.message, false);
+        return;
+      }
+
+      if (data.msg_type === "active_symbols" && data.active_symbols) {
+        const match = data.active_symbols.find(function (item) {
+          return /volatility 10 index/i.test(item.display_name || "");
+        });
+
+        if (!match) {
+          setConn("Volatility 10 não encontrado", false);
+          return;
+        }
+
+        state.symbol = match.symbol;
+
+        ws.send(JSON.stringify({
+          ticks: match.symbol,
+          subscribe: 1,
+          req_id: ++state.req
+        }));
+
+        setConn("Conectado — recebendo ticks", true);
+      }
+
+      if (data.msg_type === "tick" && data.tick) {
+        const price = Number(data.tick.quote);
+
+        if (Number.isFinite(price)) {
+          state.prices.push(price);
+
+          if (state.prices.length > 500) {
+            state.prices.shift();
+          }
+
+          if (typeof analyzeTicks === "function") {
+            analyzeTicks();
+          }
+        }
+      }
+    };
+
+    ws.onerror = function () {
+      setConn("Erro de conexão", false);
+    };
+
+    ws.onclose = function () {
+      state.connected = false;
+      setConn("Desconectado", false);
+      $("connect").textContent = "Conectar aos dados públicos";
+    };
     disconnect(); state.prices=[];state.pending=[];state.lastSignal="AGUARDAR";
     $("signal").textContent="AGUARDAR";$("signal").className="wait";$("reason").textContent="Conectando à fonte pública da Deriv…";
     setConn("Conectando");$("connect").disabled=true;
