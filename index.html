@@ -55,7 +55,7 @@ main{max-width:760px;margin:auto;padding:18px 14px 32px}.head{display:flex;align
 (() => {
   const $ = id => document.getElementById(id);
   const state = {ws:null, symbol:"", prices:[], signals:[], wins:0, losses:0, ties:0, pending:[], lastSignal:"AGUARDAR", connected:false, req:0, contractChecked:false, contractAvailable:false, selectedSymbol:""};
-  const const endpoint = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+  const endpoint = "wss://ws.derivws.com/websockets/v3?app_id=1089";
   const fmt = n => Number(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:8});
   function setConn(text,on=false){$("connection").innerHTML=`<span class="dot ${on?"on":""}"></span>${text}`;}
   function send(obj){if(state.ws && state.ws.readyState===WebSocket.OPEN)state.ws.send(JSON.stringify(obj));}
