@@ -60,7 +60,7 @@ main{max-width:760px;margin:auto;padding:18px 14px 32px}.head{display:flex;align
   function setConn(text,on=false){$("connection").innerHTML=`<span class="dot ${on?"on":""}"></span>${text}`;}
   function send(obj){if(state.ws && state.ws.readyState===WebSocket.OPEN)state.ws.send(JSON.stringify(obj));}
   function disconnect(){if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(e){}}state.ws=null;state.connected=false;state.contractChecked=false;state.contractAvailable=false;setConn("Desconectado");$("connect").textContent="Conectar aos dados públicos";$("contractStatus").textContent="Contrato Rise/Fall: ainda não verificado.";}
-  function connect(){
+  function connect() {
     disconnect(); state.prices=[];state.pending=[];state.lastSignal="AGUARDAR";
     $("signal").textContent="AGUARDAR";$("signal").className="wait";$("reason").textContent="Conectando à fonte pública da Deriv…";
     setConn("Conectando");$("connect").disabled=true;
