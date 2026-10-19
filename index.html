@@ -1,331 +1,549 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101827">
 <title>Deriv Signal AI</title>
 <style>
+:root{color-scheme:dark;--bg:#0b1120;--card:#151f31;--line:#2b3950;--text:#edf3ff;--muted:#9aabc4;--green:#39d98a;--red:#ff647c;--blue:#6ca8ff;--yellow:#ffcf70}
 *{box-sizing:border-box}
-body{margin:0;background:#0b1220;color:#edf4ff;font:15px system-ui,Arial}
-main{max-width:900px;margin:auto;padding:16px}
-h1{font-size:26px}h2{font-size:17px}
-p{color:#a4b5cc;line-height:1.5}
-.card{background:#131f32;border:1px solid #293951;border-radius:14px;padding:15px;margin:12px 0}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.metric{font-size:22px;font-weight:750;overflow-wrap:anywhere}
-label{display:block;color:#a4b5cc;font-size:13px;margin:8px 0}
-button,select{padding:12px;border-radius:9px;border:1px solid #344760;background:#1b2b43;color:white;font:inherit}
-button{background:#3264ec;border:0;font-weight:bold}
-.status{display:inline-block;border-radius:20px;background:#293951;padding:7px 11px}
-.green{color:#35dfa0}.red{color:#ff7185}
-.full{grid-column:1/-1}
-.controls{display:flex;gap:8px;flex-wrap:wrap}
+body{margin:0;background:var(--bg);color:var(--text);font:15px Arial,sans-serif}
+main{max-width:950px;margin:auto;padding:20px}
+header{margin-bottom:20px}
+h1{font-size:27px;margin:0 0 8px}
+h2{font-size:17px;margin:0 0 15px}
+p{color:var(--muted);line-height:1.5}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:15px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.metric{background:#0e1727;border:1px solid var(--line);padding:13px;border-radius:11px;min-width:0}
+.metric small{display:block;color:var(--muted);margin-bottom:8px}
+.metric strong{font-size:20px;overflow-wrap:anywhere}
+button,select{background:#22324b;color:var(--text);border:1px solid #425675;border-radius:9px;padding:12px;font-size:14px}
+button{cursor:pointer;font-weight:bold}
+button:disabled{opacity:.5;cursor:wait}
+.primary{background:#245cc5;border-color:#3977e6}
+.status{display:inline-block;padding:7px 10px;border-radius:20px;background:#352e1d;color:var(--yellow);font-size:13px}
+.good{background:#12372b;color:var(--green)}
+.bad{background:#421e2a;color:var(--red)}
+.muted{color:var(--muted)}
+.signal{font-size:28px;font-weight:bold}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
+#log{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 monospace;color:#b8c8df;max-height:180px;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-td,th{text-align:left;padding:9px 5px;border-bottom:1px solid #293951}
-th{color:#a4b5cc}
-.scroll{overflow-x:auto}
-#log{white-space:pre-wrap;overflow-wrap:anywhere;max-height:230px;overflow:auto;font:12px monospace}
-@media(min-width:600px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted)}
+.tablewrap{overflow-x:auto}
+footer{font-size:12px;color:var(--muted);line-height:1.6}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <main>
-<h1>◈ Deriv Signal AI</h1>
-<p>Volatility 10 · análise de mercado · somente simulação</p>
-<div id="status" class="status">Desconectado</div>
-<div class="controls" style="margin-top:12px">
-<button id="connect">Conectar aos dados públicos</button>
-<button id="disconnect">Desconectar</button>
-</div>
-<p id="detail">Pronto para conectar.</p>
+<header>
+  <h1>Deriv Signal AI</h1>
+  <p>Análise de Volatility 10 · Rise/Fall · validação simulada em 10 ticks</p>
+  <span id="connection" class="status">Desconectado</span>
+</header>
 
-<div class="grid">
-<section class="card full">
-<h2>Configuração</h2>
-<label for="symbol">Símbolo do mercado</label>
-<select id="symbol">
-<option value="R_10">Volatility 10 Index (R_10)</option>
-</select>
-<label for="filter">Filtro de sinais</label>
-<select id="filter">
-<option value="strict">Rigoroso</option>
-<option value="balanced">Equilibrado</option>
-</select>
-<p id="contract">Aguardando verificação de contratos.</p>
+<section class="card">
+  <h2>Conexão e configuração</h2>
+  <div class="row">
+    <button id="connect" class="primary">Conectar aos dados públicos</button>
+    <button id="disconnect" disabled>Desconectar</button>
+    <select id="threshold" aria-label="Filtro de sinais">
+      <option value="strict">Filtro rigoroso</option>
+      <option value="balanced">Filtro equilibrado</option>
+    </select>
+  </div>
+  <p id="connectionDetail">Aguardando conexão. Nenhuma ordem será enviada.</p>
+  <p>Ativo: <strong id="symbolName">Volatility 10 Index</strong> · Código: <strong id="symbol">aguardando</strong></p>
+  <p>Verificação de contrato: <strong id="contractStatus">Ainda não verificado</strong></p>
 </section>
 
-<section class="card"><label>Último preço</label><div id="price" class="metric">—</div></section>
-<section class="card"><label>EMA 9</label><div id="ema9" class="metric">—</div></section>
-<section class="card"><label>EMA 21</label><div id="ema21" class="metric">—</div></section>
-<section class="card"><label>RSI 14</label><div id="rsi" class="metric">—</div></section>
-
-<section class="card full">
-<label>Sinal atual</label>
-<div id="signal" class="metric">AGUARDAR</div>
-<p id="reason">Conecte-se para iniciar a análise.</p>
-<p id="momentum">Momentum (5 ticks): —</p>
+<section class="card">
+  <h2>Análise de mercado</h2>
+  <div class="grid">
+    <div class="metric"><small>Último preço</small><strong id="price">—</strong></div>
+    <div class="metric"><small>EMA 9</small><strong id="ema9">—</strong></div>
+    <div class="metric"><small>EMA 21</small><strong id="ema21">—</strong></div>
+    <div class="metric"><small>RSI (14)</small><strong id="rsi">—</strong></div>
+  </div>
+  <div style="margin-top:14px">
+    <small class="muted">SINAL ATUAL</small>
+    <div id="signal" class="signal yellow">AGUARDAR</div>
+    <p id="signalReason">Conecte-se para começar a análise.</p>
+  </div>
 </section>
 
-<section class="card"><label>Concluídas</label><div id="total" class="metric">0</div></section>
-<section class="card"><label>Acertos</label><div id="wins" class="metric green">0</div></section>
-<section class="card"><label>Erros</label><div id="losses" class="metric red">0</div></section>
-<section class="card"><label>Empates</label><div id="ties" class="metric">0</div></section>
-
-<section class="card full">
-<h2>Histórico de simulações</h2>
-<div class="scroll"><table>
-<thead><tr><th>Entrada</th><th>Sinal</th><th>Após 10 ticks</th><th>Resultado</th></tr></thead>
-<tbody id="history"><tr><td colspan="4">Nenhuma simulação ainda.</td></tr></tbody>
-</table></div>
-<p>Os resultados são testes direcionais, não representam lucro real.</p>
+<section class="card">
+  <h2>Resultados simulados</h2>
+  <div class="grid">
+    <div class="metric"><small>Testes concluídos</small><strong id="tests">0</strong></div>
+    <div class="metric"><small>Acertos</small><strong id="wins">0</strong></div>
+    <div class="metric"><small>Erros</small><strong id="losses">0</strong></div>
+    <div class="metric"><small>Taxa de acerto</small><strong id="rate">—</strong></div>
+  </div>
+  <p>Os resultados são simulados comparando o preço de entrada com o preço após 10 ticks. Não representam garantia de lucro.</p>
 </section>
 
-<section class="card full">
-<h2>Diagnóstico da conexão</h2>
-<div id="log">Aguardando teste.</div>
+<section class="card">
+  <h2>Últimos sinais simulados</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Sinal</th><th>Entrada</th><th>Após 10 ticks</th><th>Resultado</th></tr></thead>
+    <tbody id="history"><tr><td colspan="4" class="muted">Nenhum teste concluído.</td></tr></tbody>
+  </table>
+  </div>
 </section>
-</div>
-<p>Este painel não envia ordens de compra ou venda.</p>
+
+<section class="card">
+  <h2>Diagnóstico da conexão</h2>
+  <div id="log">Painel iniciado. Nenhuma ordem será enviada.</div>
+</section>
+
+<footer>
+Este painel utiliza dados públicos de mercado. Não solicita senha, token ou acesso à conta. A disponibilidade do ativo e a duração do contrato precisam ser confirmadas pela API; o painel não compra contratos.
+</footer>
 </main>
 
 <script>
 "use strict";
-const $=id=>document.getElementById(id);
-const S={
- ws:null,req:0,symbol:"R_10",prices:[],pending:[],rows:[],
- wins:0,losses:0,ties:0,lastEntry:0,timer:null
+
+const $ = id => document.getElementById(id);
+const state = {
+  ws:null,
+  connected:false,
+  symbol:"",
+  prices:[],
+  pending:[],
+  results:[],
+  wins:0,
+  losses:0,
+  ties:0,
+  req:0,
+  contractVerified:false,
+  contractAvailable:false,
+  contractInfo:"",
+  lastSignal:"AGUARDAR",
+  lastSignalTick:0,
+  timer:null
 };
 
-function log(s){
- $("log").textContent="["+new Date().toLocaleTimeString("pt-BR")+"] "+s+"\n"+$("log").textContent;
-}
-function status(s,good=false){
- $("status").textContent=s;
- $("status").className="status"+(good?" green":"");
-}
-function send(obj){
- if(!S.ws||S.ws.readyState!==WebSocket.OPEN){
-  log("Envio cancelado: conexão não está aberta.");
-  return;
- }
- obj.req_id=++S.req;
- S.ws.send(JSON.stringify(obj));
-}
-function stop(){
- clearTimeout(S.timer);
- const old=S.ws;
- S.ws=null;
- if(old){try{old.close()}catch(e){}}
- $("connect").disabled=false;
- status("Desconectado");
-}
-function connect(){
- stop();
- S.symbol=$("symbol").value;
- S.prices=[];S.pending=[];S.rows=[];
- S.wins=0;S.losses=0;S.ties=0;S.lastEntry=0;
- $("total").textContent="0";
- $("wins").textContent="0";
- $("losses").textContent="0";
- $("ties").textContent="0";
- $("price").textContent="—";
- $("ema9").textContent="—";
- $("ema21").textContent="—";
- $("rsi").textContent="—";
- $("signal").textContent="AGUARDAR";
- $("reason").textContent="Aguardando os primeiros dados.";
- $("history").innerHTML='<tr><td colspan="4">Aguardando dados.</td></tr>';
- $("contract").textContent="Consultando contratos disponíveis…";
- $("log").textContent="";
- $("connect").disabled=true;
- status("Conectando…");
- $("detail").textContent="Abrindo conexão pública da Deriv.";
- log("Tentando endpoint público oficial de dados de mercado.");
+/*
+ * Endpoint público legado documentado pela Deriv.
+ * Este protocolo usa active_symbols, contracts_for e ticks.
+ * Não usa autenticação nem executa ordens.
+ */
+const ENDPOINT = "wss://ws.binaryws.com/websockets/v3";
 
- let ws;
- try{
-  ws=new WebSocket("wss://ws.binaryws.com/websockets/v3");
-  S.ws=ws;
- }catch(e){
-  status("Falha");
-  $("detail").textContent="O navegador não conseguiu criar a conexão.";
-  log("Erro ao criar WebSocket: "+e.message);
-  $("connect").disabled=false;
-  return;
- }
-
- S.timer=setTimeout(()=>{
-  if(S.ws===ws&&ws.readyState!==WebSocket.OPEN){
-   log("Tempo limite: o WebSocket não abriu.");
-   status("Tempo esgotado");
-   $("detail").textContent="A conexão não abriu. Verifique a rede ou bloqueio do WebSocket.";
-   try{ws.close()}catch(e){}
-   if(S.ws===ws)S.ws=null;
-   $("connect").disabled=false;
-  }
- },12000);
-
- ws.onopen=()=>{
-  if(S.ws!==ws)return;
-  clearTimeout(S.timer);
-  status("Conectado",true);
-  $("detail").textContent="Canal aberto. Solicitando ativos, contratos e ticks.";
-  log("WebSocket aberto com sucesso.");
-  send({active_symbols:"brief",product_type:"basic"});
-  send({contracts_for:S.symbol,product_type:"basic"});
-  send({ticks_history:S.symbol,count:100,end:"latest",style:"ticks"});
-  send({ticks:S.symbol,subscribe:1});
- };
-
- ws.onmessage=event=>{
-  if(S.ws!==ws)return;
-  let d;
-  try{d=JSON.parse(event.data)}catch(e){
-   log("Resposta inválida recebida.");
-   return;
-  }
-  if(d.error){
-   log("Erro da API: "+d.error.message);
-   if(d.echo_req&&d.echo_req.contracts_for){
-    $("contract").textContent="Verificação de contrato falhou: "+d.error.message;
-   }
-   return;
-  }
-  if(d.msg_type==="active_symbols"){
-   const found=(d.active_symbols||[]).find(x=>x.symbol===S.symbol);
-   if(found)log("Ativo encontrado: "+found.display_name+" ("+found.symbol+").");
-   else log("O símbolo "+S.symbol+" não foi encontrado na lista retornada.");
-  }
-  if(d.msg_type==="contracts_for"){
-   checkContracts(d.contracts_for);
-  }
-  if(d.msg_type==="history"&&d.history){
-   (d.history.prices||[]).forEach(p=>addPrice(Number(p)));
-   log("Histórico recebido: "+(d.history.prices||[]).length+" preços.");
-   update();
-  }
-  if(d.msg_type==="tick"&&d.tick){
-   addPrice(Number(d.tick.quote));
-  }
- };
-
- ws.onerror=()=>{
-  if(S.ws!==ws)return;
-  log("Erro WebSocket: navegador não forneceu detalhes adicionais.");
-  status("Erro de conexão");
-  $("detail").textContent="A conexão falhou. Consulte o diagnóstico abaixo.";
-  $("connect").disabled=false;
- };
- ws.onclose=e=>{
-  if(S.ws!==ws)return;
-  S.ws=null;
-  clearTimeout(S.timer);
-  status("Desconectado");
-  $("detail").textContent="Conexão encerrada. Código: "+e.code+".";
-  log("WebSocket encerrado. Código: "+e.code+".");
-  $("connect").disabled=false;
- };
+function log(message){
+  const stamp = new Date().toLocaleTimeString("pt-BR");
+  $("log").textContent = "[" + stamp + "] " + message + "\n" + $("log").textContent;
+  $("log").textContent = $("log").textContent.slice(0,5000);
 }
 
-function checkContracts(info){
- const list=info&&info.available;
- if(!Array.isArray(list)){
-  $("contract").textContent="A API não forneceu uma lista verificável de contratos.";
-  log("Resposta de contratos sem lista available.");
-  return;
- }
- const types=list.filter(c=>["CALL","PUT","RISE","FALL"].includes(String(c.contract_type||"").toUpperCase()));
- if(!types.length){
-  $("contract").textContent="Rise/Fall não foi confirmado na lista retornada.";
-  log("Nenhum tipo CALL/PUT/RISE/FALL encontrado.");
-  return;
- }
- $("contract").textContent="A API listou tipos Rise/Fall ou equivalentes. A duração exata de 10 ticks ainda precisa ser confirmada.";
- log("Tipos de contrato encontrados: "+types.map(c=>c.contract_type).join(", ")+".");
+function setStatus(text,kind=""){
+  $("connection").textContent=text;
+  $("connection").className="status"+(kind ? " "+kind : "");
 }
 
-function ema(a,n){
- if(a.length<n)return null;
- let v=a.slice(0,n).reduce((x,y)=>x+y,0)/n,k=2/(n+1);
- for(let i=n;i<a.length;i++)v=a[i]*k+v*(1-k);
- return v;
+function send(payload){
+  if(!state.ws || state.ws.readyState!==WebSocket.OPEN){
+    log("Envio cancelado: WebSocket não está aberto.");
+    return false;
+  }
+  state.ws.send(JSON.stringify(payload));
+  return true;
 }
-function rsi(a,n=14){
- if(a.length<=n)return null;
- let g=0,l=0;
- for(let i=a.length-n;i<a.length;i++){
-  const d=a[i]-a[i-1];
-  if(d>0)g+=d;else l-=d;
- }
- if(l===0)return g===0?50:100;
- return 100-100/(1+g/l);
-}
-function addPrice(p){
- if(!Number.isFinite(p))return;
- S.prices.push(p);
- if(S.prices.length>1000)S.prices.shift();
- $("price").textContent=p.toFixed(4);
- settle();
- update();
-}
-function update(){
- const a=S.prices,e9=ema(a,9),e21=ema(a,21),rv=rsi(a);
- $("ema9").textContent=e9===null?"—":e9.toFixed(4);
- $("ema21").textContent=e21===null?"—":e21.toFixed(4);
- $("rsi").textContent=rv===null?"—":rv.toFixed(1);
- const mom=a.length>=6?a[a.length-1]-a[a.length-6]:null;
- $("momentum").textContent="Momentum (5 ticks): "+(mom===null?"—":mom.toFixed(4));
- if(a.length<30||e9===null||e21===null||rv===null){
+
+function resetSession(){
+  state.prices=[];
+  state.pending=[];
+  state.results=[];
+  state.wins=0;
+  state.losses=0;
+  state.ties=0;
+  state.lastSignal="AGUARDAR";
+  state.lastSignalTick=0;
+  state.contractVerified=false;
+  state.contractAvailable=false;
+  state.contractInfo="";
+  renderResults();
+  $("history").innerHTML='<tr><td colspan="4" class="muted">Nenhum teste concluído.</td></tr>';
   $("signal").textContent="AGUARDAR";
-  $("reason").textContent="Coletando 30 ticks para calcular os indicadores.";
-  return;
- }
- const strict=$("filter").value==="strict";
- let sig="AGUARDAR",why="Os filtros não confirmam uma direção.";
- if(e9>e21&&mom>0&&(strict?rv>=55&&rv<=65:rv>=52&&rv<=70)){
-  sig="RISE";why="EMA 9 acima da EMA 21, momentum positivo e RSI favorável.";
- }else if(e9<e21&&mom<0&&(strict?rv>=35&&rv<=45:rv>=30&&rv<=48)){
-  sig="FALL";why="EMA 9 abaixo da EMA 21, momentum negativo e RSI favorável.";
- }
- $("signal").textContent=sig;
- $("signal").className="metric "+(sig==="RISE"?"green":sig==="FALL"?"red":"");
- $("reason").textContent=why;
- if(sig!=="AGUARDAR"&&a.length-S.lastEntry>=10){
-  S.lastEntry=a.length;
-  const item={entry:a[a.length-1],signal:sig,index:a.length,exit:null,result:"PENDENTE"};
-  S.pending.push(item);S.rows.unshift(item);S.rows=S.rows.slice(0,20);
-  render();
-  log("Sinal simulado "+sig+". Avaliação direcional após 10 ticks.");
- }
+  $("signal").className="signal yellow";
+  $("signalReason").textContent="Aguardando dados e verificação do contrato.";
+  $("contractStatus").textContent="Verificando...";
+  $("price").textContent="—";
+  $("ema9").textContent="—";
+  $("ema21").textContent="—";
+  $("rsi").textContent="—";
 }
-function settle(){
- const n=S.prices.length;
- for(const p of [...S.pending]){
-  if(n-p.index<10)continue;
-  p.exit=S.prices[n-1];
-  if(p.exit===p.entry){p.result="EMPATE";S.ties++}
-  else if((p.exit>p.entry&&p.signal==="RISE")||(p.exit<p.entry&&p.signal==="FALL")){
-   p.result="ACERTO";S.wins++;
-  }else{p.result="ERRO";S.losses++}
-  S.pending=S.pending.filter(x=>x!==p);
- }
- $("total").textContent=S.wins+S.losses+S.ties;
- $("wins").textContent=S.wins;
- $("losses").textContent=S.losses;
- $("ties").textContent=S.ties;
- render();
+
+function disconnect(message="Desconectado"){
+  if(state.timer) clearTimeout(state.timer);
+  state.timer=null;
+  state.connected=false;
+  const old=state.ws;
+  state.ws=null;
+  if(old){
+    old.onopen=null;
+    old.onmessage=null;
+    old.onerror=null;
+    old.onclose=null;
+    try{old.close()}catch(e){}
+  }
+  setStatus(message);
+  $("connectionDetail").textContent="A conexão está fechada. Consulte o diagnóstico abaixo.";
+  $("connect").disabled=false;
+  $("disconnect").disabled=true;
 }
-function render(){
- if(!S.rows.length)return;
- $("history").innerHTML=S.rows.map(r=>"<tr><td>"+r.entry.toFixed(4)+"</td><td>"+r.signal+"</td><td>"+(r.exit===null?"Pendente":r.exit.toFixed(4))+"</td><td>"+r.result+"</td></tr>").join("");
+
+function connect(){
+  if(state.ws && (state.ws.readyState===WebSocket.OPEN || state.ws.readyState===WebSocket.CONNECTING)){
+    log("Já existe uma conexão aberta ou em andamento.");
+    return;
+  }
+
+  resetSession();
+  setStatus("Conectando...");
+  $("connectionDetail").textContent="Abrindo conexão pública com a Deriv...";
+  $("connect").disabled=true;
+  $("disconnect").disabled=false;
+  $("symbol").textContent="procurando...";
+  log("Tentando: "+ENDPOINT);
+
+  let ws;
+  try{
+    ws=new WebSocket(ENDPOINT);
+  }catch(err){
+    log("Não foi possível criar WebSocket: "+err.message);
+    setStatus("Erro de conexão","bad");
+    $("connectionDetail").textContent=err.message;
+    $("connect").disabled=false;
+    $("disconnect").disabled=true;
+    return;
+  }
+  state.ws=ws;
+
+  state.timer=setTimeout(()=>{
+    if(state.ws===ws && ws.readyState!==WebSocket.OPEN){
+      log("Tempo esgotado ao tentar abrir a conexão.");
+      setStatus("Tempo esgotado","bad");
+      $("connectionDetail").textContent="O navegador não abriu a conexão WebSocket. Pode ser rede, bloqueio ou endpoint.";
+      disconnect("Falha de conexão");
+    }
+  },12000);
+
+  ws.onopen=()=>{
+    if(state.ws!==ws)return;
+    clearTimeout(state.timer);
+    state.timer=null;
+    state.connected=true;
+    setStatus("Conectado","good");
+    $("connectionDetail").textContent="WebSocket aberto. Solicitando lista de ativos...";
+    log("WebSocket aberto com sucesso.");
+    send({active_symbols:"brief",product_type:"basic",req_id:++state.req});
+    send({ping:1,req_id:++state.req});
+  };
+
+  ws.onmessage=(event)=>{
+    if(state.ws!==ws)return;
+    let data;
+    try{data=JSON.parse(event.data)}catch(e){
+      log("Resposta recebida não é JSON válido.");
+      return;
+    }
+
+    if(data.error){
+      log("Erro da API: "+data.error.message+" ("+(data.error.code||"sem código")+")");
+      if(data.msg_type==="active_symbols"){
+        $("connectionDetail").textContent="A API respondeu, mas recusou a consulta de ativos: "+data.error.message;
+      }
+      if(data.msg_type==="contracts_for"){
+        state.contractVerified=true;
+        state.contractAvailable=false;
+        state.contractInfo="A API não confirmou os detalhes do contrato.";
+        $("contractStatus").textContent="Não confirmado: "+data.error.message;
+        updateSignal("AGUARDAR","Contrato não confirmado pela API.");
+      }
+      return;
+    }
+
+    if(data.msg_type==="ping"){
+      return;
+    }
+
+    if(data.msg_type==="active_symbols"){
+      const list=data.active_symbols||[];
+      const found=list.filter(x=>{
+        const name=String(x.display_name||"").toLowerCase();
+        const symbol=String(x.symbol||"").toUpperCase();
+        return (
+          name==="volatility 10 index" ||
+          (name.includes("volatility 10") && !name.includes("1-second")) ||
+          symbol==="R_10"
+        );
+      });
+      const exact=found.find(x=>String(x.display_name||"").toLowerCase()==="volatility 10 index")
+        || found.find(x=>String(x.symbol||"").toUpperCase()==="R_10")
+        || found[0];
+
+      if(!exact){
+        log("A API respondeu, mas Volatility 10 Index não apareceu na lista de ativos.");
+        $("connectionDetail").textContent="Conectado, porém o ativo não foi encontrado. Consulte o diagnóstico.";
+        $("symbol").textContent="não encontrado";
+        $("contractStatus").textContent="Não verificado";
+        return;
+      }
+
+      state.symbol=exact.symbol;
+      $("symbol").textContent=exact.symbol;
+      $("symbolName").textContent=exact.display_name||"Volatility 10 Index";
+      $("connectionDetail").textContent="Ativo encontrado. Consultando contratos disponíveis...";
+      log("Ativo encontrado: "+exact.display_name+" ("+exact.symbol+").");
+      send({contracts_for:exact.symbol,product_type:"basic",req_id:++state.req});
+      send({ticks_history:exact.symbol,count:100,end:"latest",style:"ticks",req_id:++state.req});
+      send({ticks:exact.symbol,subscribe:1,req_id:++state.req});
+      return;
+    }
+
+    if(data.msg_type==="contracts_for"){
+      checkContracts(data.contracts_for);
+      return;
+    }
+
+    if(data.msg_type==="history"){
+      const prices=(data.history&&data.history.prices)||[];
+      prices.forEach(v=>addPrice(Number(v),false));
+      log("Histórico inicial recebido: "+prices.length+" preços.");
+      renderIndicators();
+      evaluateSignal();
+      return;
+    }
+
+    if(data.msg_type==="tick" && data.tick){
+      addPrice(Number(data.tick.quote),true);
+    }
+  };
+
+  ws.onerror=()=>{
+    if(state.ws!==ws)return;
+    log("Erro de rede no WebSocket. O navegador pode ocultar o detalhe técnico.");
+    $("connectionDetail").textContent="Falha de rede no WebSocket. Veja se a conexão abre após tentar novamente.";
+    setStatus("Erro de rede","bad");
+  };
+
+  ws.onclose=(event)=>{
+    if(state.ws!==ws)return;
+    log("WebSocket fechado. Código: "+event.code+(event.reason ? ". Motivo: "+event.reason : ""));
+    state.ws=null;
+    state.connected=false;
+    if(state.timer)clearTimeout(state.timer);
+    state.timer=null;
+    setStatus("Desconectado","bad");
+    $("connectionDetail").textContent="Conexão encerrada. Código de fechamento: "+event.code+".";
+    $("connect").disabled=false;
+    $("disconnect").disabled=true;
+  };
 }
+
+/*
+ * A API pode devolver tipos de contrato sem confirmar
+ * explicitamente os limites de duração em ticks.
+ * Por segurança, não declaramos 10 ticks disponível
+ * quando os metadados necessários não aparecem.
+ */
+function checkContracts(response){
+  const contracts=(response&&response.available)?response.available:[];
+  const riseFall=contracts.filter(c=>{
+    const type=String(c.contract_type||"").toUpperCase();
+    return ["CALL","PUT","RISE","FALL"].includes(type);
+  });
+
+  const durationTicks=c=>{
+    const values=[
+      c.min_contract_duration,
+      c.max_contract_duration,
+      c.contract_display
+    ].filter(Boolean).join(" ");
+    const matches=[...values.matchAll(/(\d+)\s*t\b/ig)].map(m=>Number(m[1]));
+    return matches;
+  };
+
+  const hasRise=riseFall.some(c=>["CALL","RISE"].includes(String(c.contract_type||"").toUpperCase()));
+  const hasFall=riseFall.some(c=>["PUT","FALL"].includes(String(c.contract_type||"").toUpperCase()));
+  const explicit10=riseFall.some(c=>{
+    const vals=durationTicks(c);
+    return vals.length>0 && vals.some(n=>n<=10) &&
+      vals.some(n=>n>=10) &&
+      /t\b/i.test([c.min_contract_duration,c.max_contract_duration,c.contract_display].filter(Boolean).join(" "));
+  });
+
+  state.contractVerified=true;
+  state.contractAvailable=Boolean(hasRise&&hasFall&&explicit10);
+
+  if(state.contractAvailable){
+    state.contractInfo="Rise/Fall e duração de 10 ticks identificados nos metadados.";
+    $("contractStatus").textContent="10 ticks confirmados nos metadados";
+    $("contractStatus").className="green";
+    log("A API informou Rise/Fall e metadados compatíveis com 10 ticks.");
+    $("connectionDetail").textContent="Conectado. Recebendo cotações e analisando o ativo.";
+  }else{
+    state.contractInfo="A API não confirmou explicitamente a duração de 10 ticks.";
+    $("contractStatus").textContent="10 ticks não confirmados — sinais bloqueados";
+    $("contractStatus").className="yellow";
+    log("Contratos listados: "+riseFall.map(c=>c.contract_type).join(", "));
+    log("Não foi possível confirmar explicitamente 10 ticks. Nenhum sinal será validado.");
+    $("connectionDetail").textContent="Conectado, mas a duração de 10 ticks não foi confirmada pela resposta da API.";
+    updateSignal("AGUARDAR",state.contractInfo);
+  }
+}
+
+function addPrice(price,fromLive){
+  if(!Number.isFinite(price))return;
+  const last=state.prices[state.prices.length-1];
+  if(fromLive && last===price){
+    // Preços iguais continuam sendo ticks válidos; não os descartamos.
+  }
+  state.prices.push(price);
+  if(state.prices.length>500)state.prices.shift();
+
+  state.pending.forEach(p=>p.remaining--);
+  const finished=state.pending.filter(p=>p.remaining<=0);
+  state.pending=state.pending.filter(p=>p.remaining>0);
+
+  finished.forEach(p=>{
+    const result=price>p.entry?"ACERTO":price<p.entry?"ERRO":"EMPATE";
+    if(result==="ACERTO")state.wins++;
+    else if(result==="ERRO")state.losses++;
+    else state.ties++;
+    state.results.unshift({signal:p.signal,entry:p.entry,exit:price,result});
+    state.results=state.results.slice(0,12);
+    log("Simulação concluída: "+p.signal+" → "+result+".");
+  });
+
+  renderIndicators();
+  renderResults();
+  if(fromLive)evaluateSignal();
+}
+
+function ema(values,period){
+  if(values.length<period)return null;
+  const k=2/(period+1);
+  let result=values.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<values.length;i++)result=values[i]*k+result*(1-k);
+  return result;
+}
+
+function rsi(values,period=14){
+  if(values.length<period+1)return null;
+  let gains=0,losses=0;
+  for(let i=values.length-period;i<values.length;i++){
+    const diff=values[i]-values[i-1];
+    if(diff>0)gains+=diff;
+    else losses-=diff;
+  }
+  if(losses===0)return gains===0?50:100;
+  return 100-(100/(1+gains/losses));
+}
+
+function renderIndicators(){
+  const a=state.prices;
+  if(!a.length)return;
+  const price=a[a.length-1],e9=ema(a,9),e21=ema(a,21),r=rsi(a,14);
+  $("price").textContent=price.toFixed(4);
+  $("ema9").textContent=e9===null?"aguardando":e9.toFixed(4);
+  $("ema21").textContent=e21===null?"aguardando":e21.toFixed(4);
+  $("rsi").textContent=r===null?"aguardando":r.toFixed(1);
+}
+
+function updateSignal(signal,reason){
+  $("signal").textContent=signal;
+  $("signal").className="signal "+(signal==="RISE"?"green":signal==="FALL"?"red":"yellow");
+  $("signalReason").textContent=reason;
+}
+
+function evaluateSignal(){
+  const a=state.prices;
+  if(a.length<30){
+    updateSignal("AGUARDAR","Coletando ticks: "+a.length+"/30.");
+    return;
+  }
+  if(!state.contractVerified || !state.contractAvailable){
+    updateSignal("AGUARDAR","A duração de 10 ticks não foi confirmada pela API.");
+    return;
+  }
+
+  const e9=ema(a,9),e21=ema(a,21),r=rsi(a,14);
+  const momentum=a[a.length-1]-a[a.length-6];
+  if(e9===null||e21===null||r===null)return;
+
+  let signal="AGUARDAR",reason="Filtros de confirmação não alinhados.";
+  if($("threshold").value==="strict"){
+    if(e9>e21 && momentum>0 && r>=55 && r<=65){
+      signal="RISE";reason="EMA 9 acima da EMA 21, momentum positivo e RSI entre 55 e 65.";
+    }else if(e9<e21 && momentum<0 && r>=35 && r<=45){
+      signal="FALL";reason="EMA 9 abaixo da EMA 21, momentum negativo e RSI entre 35 e 45.";
+    }
+  }else{
+    if(e9>e21 && momentum>0 && r>=52 && r<=70){
+      signal="RISE";reason="Tendência e momentum positivos, com RSI dentro do filtro equilibrado.";
+    }else if(e9<e21 && momentum<0 && r>=30 && r<=48){
+      signal="FALL";reason="Tendência e momentum negativos, com RSI dentro do filtro equilibrado.";
+    }
+  }
+
+  const currentTick=a.length;
+  if(signal!=="AGUARDAR" && signal!==state.lastSignal &&
+     currentTick-state.lastSignalTick>=10){
+    state.pending.push({
+      signal,
+      entry:a[a.length-1],
+      remaining:10
+    });
+    state.lastSignal=signal;
+    state.lastSignalTick=currentTick;
+    log("Sinal SIMULADO "+signal+" registrado. Avaliação após 10 ticks.");
+  }
+
+  updateSignal(signal,reason);
+}
+
+function renderResults(){
+  const tests=state.wins+state.losses+state.ties;
+  $("tests").textContent=tests;
+  $("wins").textContent=state.wins;
+  $("losses").textContent=state.losses;
+  $("rate").textContent=(state.wins+state.losses)>0
+    ?(100*state.wins/(state.wins+state.losses)).toFixed(1)+"%"
+    :"—";
+
+  if(!state.results.length){
+    $("history").innerHTML='<tr><td colspan="4" class="muted">Nenhum teste concluído.</td></tr>';
+    return;
+  }
+  $("history").innerHTML=state.results.map(x=>
+    "<tr><td>"+x.signal+"</td><td>"+x.entry.toFixed(4)+
+    "</td><td>"+x.exit.toFixed(4)+"</td><td>"+
+    x.result+"</td></tr>"
+  ).join("");
+}
+
 $("connect").addEventListener("click",connect);
-$("disconnect").addEventListener("click",stop);
-$("symbol").addEventListener("change",()=>{if(S.ws)connect()});
-$("filter").addEventListener("change",update);
-window.addEventListener("pagehide",()=>{if(S.ws)try{S.ws.close()}catch(e){}});
+$("disconnect").addEventListener("click",()=>disconnect());
+$("threshold").addEventListener("change",evaluateSignal);
+
+window.addEventListener("pagehide",()=>{
+  if(state.ws){
+    try{state.ws.close()}catch(e){}
+  }
+});
+
+log("Painel iniciado. Sem autenticação e sem ordens reais.");
 </script>
 </body>
 </html>
