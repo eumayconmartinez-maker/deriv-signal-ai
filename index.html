@@ -1,249 +1,425 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101827">
-<title>Deriv Signal AI — Demo de sinais</title>
+<title>Deriv Signal AI</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--muted:#9eacc2;--line:#28364b;--green:#35d49a;--red:#ff6878;--yellow:#ffd166;--blue:#76b7ff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101a2c);color:#edf3ff;font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:760px;margin:auto;padding:18px 14px 32px}.head{display:flex;align-items:center;gap:12px;margin-bottom:16px}.logo{width:48px;height:48px;border-radius:14px;background:#183a3a;display:grid;place-items:center;color:var(--green);font-size:24px}.sub{color:var(--muted);font-size:13px}h1{font-size:22px;margin:0 0 3px}h2{font-size:16px;margin:0 0 12px}.card{background:rgba(19,30,48,.96);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}.statusrow{display:flex;justify-content:space-between;gap:12px;align-items:center}.pill{font-size:12px;padding:6px 9px;border-radius:999px;background:#253147;color:var(--muted)}.signal{margin-top:14px;padding:20px 12px;border-radius:14px;text-align:center;background:#252e3e}.signal strong{display:block;font-size:27px;letter-spacing:.4px}.signal small{display:block;margin-top:5px;color:#d2dbea}.rise{color:var(--green)!important}.fall{color:var(--red)!important}.wait{color:var(--yellow)!important}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#0d1727;border-radius:12px;padding:12px;min-width:0}.metric span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.metric b{font-size:17px;overflow-wrap:anywhere}label{display:block;color:var(--muted);font-size:12px;margin:0 0 7px}select,button{font:inherit;border-radius:11px;border:1px solid var(--line);padding:11px;background:#0d1727;color:#edf3ff;width:100%}button{background:#1d6b58;border:0;font-weight:650;cursor:pointer}button.secondary{background:#26334a}button:disabled{opacity:.5}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fine{font-size:12px;line-height:1.5;color:var(--muted)}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500}.empty{color:var(--muted);font-size:13px;padding:12px 0}.foot{font-size:11px;color:var(--muted);line-height:1.5;margin:16px 2px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);margin-right:6px}.dot.on{background:var(--green)}@media(min-width:600px){main{padding-top:28px}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+:root{color-scheme:dark;--bg:#0b1220;--card:#131f32;--line:#263750;--text:#edf4ff;--muted:#91a4bf;--green:#35dfa0;--red:#ff667c;--blue:#6e9dff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial,sans-serif}
+main{max-width:1000px;margin:auto;padding:18px}
+header{padding:12px 0 20px}
+h1{margin:0;font-size:27px}
+h2{font-size:17px;margin:0 0 14px}
+p{color:var(--muted);line-height:1.5}
+small,.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;margin-bottom:12px;min-width:0}
+.full{grid-column:1/-1}
+.status{display:inline-block;padding:6px 10px;border-radius:20px;background:#273449;color:#c6d5e9;font-size:13px}
+.good{color:var(--green)}.bad{color:var(--red)}
+button,select{border:1px solid var(--line);border-radius:10px;padding:12px;background:#1b2a41;color:var(--text);font:inherit}
+button{cursor:pointer;background:#315fe8;border:0;font-weight:700}
+button:disabled{opacity:.5}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.metric{font-size:23px;font-weight:750;overflow-wrap:anywhere}
+.signal{font-size:27px;font-weight:800;letter-spacing:1px}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted)}
+.tablewrap{overflow-x:auto}
+#log{font:12px ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:190px;overflow:auto;color:#b7c8e1}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <main>
-  <div class="head"><div class="logo">↗</div><div><h1>Deriv Signal AI</h1><div class="sub">Volatility 10 · sinais e validação simulada · sem ordens</div></div></div>
-  <section class="card">
-    <div class="statusrow"><h2>Conexão de mercado</h2><span class="pill" id="connection"><span class="dot"></span>Desconectado</span></div>
-    <div class="fine" id="contractStatus" style="margin:0 0 10px">Contrato Rise/Fall: ainda não verificado.</div>
-    <div class="controls">
-      <div><label for="symbol">Índice disponível</label><select id="symbol"><option value="">Buscando índices…</option></select></div>
-      <div><label for="threshold">Filtro de confirmação</label><select id="threshold"><option value="strict">Rigoroso</option><option value="balanced" selected>Equilibrado</option></select></div>
+<header>
+  <h1>◈ Deriv Signal AI</h1>
+  <p>Volatility 10 Index · análise de ticks · simulação sem ordens reais</p>
+  <span id="status" class="status">Desconectado</span>
+  <div class="controls">
+    <button id="connect">Conectar aos dados públicos</button>
+    <button id="disconnect" style="background:#34445b">Desconectar</button>
+  </div>
+  <p id="detail">Pronto para conectar.</p>
+</header>
+
+<div class="grid">
+  <section class="card full">
+    <h2>Configuração</h2>
+    <label for="symbol">Ativo</label>
+    <select id="symbol">
+      <option value="R_10">Volatility 10 Index (R_10)</option>
+    </select>
+    <div style="margin-top:12px">
+      <label for="threshold">Filtro de sinal</label>
+      <select id="threshold">
+        <option value="strict">Rigoroso</option>
+        <option value="balanced">Equilibrado</option>
+      </select>
     </div>
-    <div style="height:10px"></div><button id="connect">Conectar aos dados públicos</button>
-    <div class="fine" style="margin-top:9px">A página usa a conexão pública de dados da Deriv, sem login. Ela apenas analisa preços e não envia ordens.</div>
+    <p id="contractStatus">A disponibilidade de Rise/Fall para 10 ticks ainda não foi verificada.</p>
+  </section>
+
+  <section class="card">
+    <label>Último preço</label>
+    <div id="price" class="metric">—</div>
   </section>
   <section class="card">
-    <div class="statusrow"><h2>Sinal atual</h2><span class="pill" id="ticksCount">0 ticks recebidos</span></div>
-    <div class="signal" id="signalBox"><strong class="wait" id="signal">AGUARDAR</strong><small id="reason">Conecte-se para começar a analisar os ticks.</small></div>
-    <div style="height:12px"></div>
-    <div class="grid">
-      <div class="metric"><span>Última cotação</span><b id="price">—</b></div>
-      <div class="metric"><span>EMA 9 / EMA 21</span><b id="emas">—</b></div>
-      <div class="metric"><span>RSI (14)</span><b id="rsi">—</b></div>
-      <div class="metric"><span>Momentum (5 ticks)</span><b id="momentum">—</b></div>
+    <label>EMA 9</label>
+    <div id="ema9" class="metric">—</div>
+  </section>
+  <section class="card">
+    <label>EMA 21</label>
+    <div id="ema21" class="metric">—</div>
+  </section>
+  <section class="card">
+    <label>RSI 14</label>
+    <div id="rsi" class="metric">—</div>
+  </section>
+
+  <section class="card full">
+    <label>Leitura atual</label>
+    <div id="signal" class="signal">AGUARDAR</div>
+    <p id="reason">Conecte-se e aguarde os dados.</p>
+    <small id="momentum">Momentum (5 ticks): —</small>
+    <p><small>Os sinais são análises experimentais, não garantem acerto nem lucro.</small></p>
+  </section>
+
+  <section class="card">
+    <label>Simulações concluídas</label>
+    <div id="total" class="metric">0</div>
+  </section>
+  <section class="card">
+    <label>Acertos</label>
+    <div id="wins" class="metric good">0</div>
+  </section>
+  <section class="card">
+    <label>Erros</label>
+    <div id="losses" class="metric bad">0</div>
+  </section>
+  <section class="card">
+    <label>Empates</label>
+    <div id="ties" class="metric">0</div>
+  </section>
+
+  <section class="card full">
+    <h2>Últimos sinais simulados</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Entrada</th><th>Sinal</th><th>Após 10 ticks</th><th>Resultado</th></tr></thead>
+        <tbody id="history"><tr><td colspan="4">Aguardando sinais.</td></tr></tbody>
+      </table>
     </div>
   </section>
-  <section class="card">
-    <div class="statusrow"><h2>Validação simulada</h2><span class="pill">Expiração: 10 ticks</span></div>
-    <div class="grid">
-      <div class="metric"><span>Testes concluídos</span><b id="tested">0</b></div>
-      <div class="metric"><span>Acertos / erros</span><b id="winslosses">0 / 0</b></div>
-      <div class="metric"><span>Empates</span><b id="ties">0</b></div>
-      <div class="metric"><span>Taxa de acerto*</span><b id="winrate">—</b></div>
-    </div>
-    <div class="fine" style="margin-top:10px">*Taxa calculada apenas sobre acertos e erros; não considera pagamento, spread, preço de contrato nem rentabilidade. O teste é uma simulação de direção após 10 ticks, não uma execução de contrato.</div>
+
+  <section class="card full">
+    <h2>Diagnóstico da conexão</h2>
+    <div id="log">O diagnóstico aparecerá aqui.</div>
   </section>
-  <section class="card">
-    <div class="statusrow"><h2>Últimos sinais</h2><button class="secondary" id="clear" style="width:auto;padding:8px 11px">Limpar histórico</button></div>
-    <div class="scroll"><table><thead><tr><th>Hora</th><th>Sinal</th><th>Entrada</th><th>Após 10 ticks</th><th>Resultado</th></tr></thead><tbody id="history"><tr><td colspan="5" class="empty">Nenhum sinal registrado ainda.</td></tr></tbody></table></div>
-  </section>
-  <p class="foot">Protótipo experimental. EMA/RSI sobre ticks são filtros simples, não uma IA treinada e não garantem previsão. Teste por tempo suficiente antes de tirar conclusões. Não use este painel como recomendação financeira. A conexão pode falhar ou o símbolo disponível pode variar por conta/região.</p>
+</div>
+<footer><p>Modo de demonstração: este painel não envia compras, vendas ou ordens à corretora.</p></footer>
 </main>
+
 <script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const state = {ws:null, symbol:"", prices:[], signals:[], wins:0, losses:0, ties:0, pending:[], lastSignal:"AGUARDAR", connected:false, req:0, contractChecked:false, contractAvailable:false, selectedSymbol:""};
-  const endpoint = "wss://ws.derivws.com/websockets/v3?app_id=1089";
-  const fmt = n => Number(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:8});
-  function setConn(text,on=false){$("connection").innerHTML=`<span class="dot ${on?"on":""}"></span>${text}`;}
-  function send(obj){if(state.ws && state.ws.readyState===WebSocket.OPEN)state.ws.send(JSON.stringify(obj));}
-  function disconnect(){if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(e){}}state.ws=null;state.connected=false;state.contractChecked=false;state.contractAvailable=false;setConn("Desconectado");$("connect").textContent="Conectar aos dados públicos";$("contractStatus").textContent="Contrato Rise/Fall: ainda não verificado.";}
-  function connect() {    if (state.ws) {
-      try { state.ws.close(); } catch (e) {}
+"use strict";
+
+const $ = id => document.getElementById(id);
+const state = {
+  ws:null, req:0, prices:[], symbol:"R_10",
+  contractChecked:false, contractAvailable:false,
+  pending:[], rows:[], wins:0, losses:0, ties:0,
+  lastSignal:"AGUARDAR", lastEntryTick:-100,
+  connectTimer:null
+};
+
+function log(message){
+  const time = new Date().toLocaleTimeString("pt-BR");
+  $("log").textContent = `[${time}] ${message}\n` + $("log").textContent;
+}
+function status(message,good=false){
+  $("status").textContent=message;
+  $("status").className="status "+(good?"good":"");
+}
+function detail(message){$("detail").textContent=message}
+function send(payload){
+  if(!state.ws || state.ws.readyState!==WebSocket.OPEN){
+    log("Envio cancelado: WebSocket não está conectado.");
+    return;
+  }
+  state.ws.send(JSON.stringify({...payload,req_id:++state.req}));
+}
+function disconnect(){
+  clearTimeout(state.connectTimer);
+  if(state.ws){
+    const old=state.ws;
+    state.ws=null;
+    try{old.close()}catch(e){}
+  }
+  status("Desconectado");
+  detail("Conexão encerrada. Nenhuma ordem foi enviada.");
+  $("connect").disabled=false;
+}
+function connect(){
+  disconnect();
+  state.prices=[];
+  state.pending=[];
+  state.rows=[];
+  state.wins=state.losses=state.ties=0;
+  state.contractChecked=false;
+  state.contractAvailable=false;
+  state.symbol=$("symbol").value;
+  $("history").innerHTML='<tr><td colspan="4">Aguardando sinais.</td></tr>';
+  $("contractStatus").textContent="Verificando contratos disponíveis…";
+  $("connect").disabled=true;
+  status("Conectando…");
+  detail("Abrindo conexão pública com a Deriv…");
+  $("log").textContent="";
+  log("Iniciando conexão WebSocket.");
+
+  let ws;
+  try{
+    ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+    state.ws=ws;
+  }catch(e){
+    status("Erro");
+    detail("Não foi possível criar a conexão: "+e.message);
+    log("Falha ao criar WebSocket: "+e.message);
+    $("connect").disabled=false;
+    return;
+  }
+
+  state.connectTimer=setTimeout(()=>{
+    if(state.ws===ws && ws.readyState!==WebSocket.OPEN){
+      log("Tempo limite ao conectar. Verifique internet ou bloqueio de WebSocket.");
+      detail("A conexão demorou demais. Tente novamente.");
+      status("Tempo esgotado");
+      try{ws.close()}catch(e){}
+      if(state.ws===ws)state.ws=null;
+      $("connect").disabled=false;
+    }
+  },12000);
+
+  ws.onopen=()=>{
+    clearTimeout(state.connectTimer);
+    if(state.ws!==ws)return;
+    status("Conectado",true);
+    detail("Conexão estabelecida. Solicitando dados do mercado…");
+    log("WebSocket conectado.");
+    send({ping:1});
+    send({active_symbols:"full",product_type:"basic"});
+    send({contracts_for:state.symbol,product_type:"basic"});
+    send({ticks_history:state.symbol,count:100,end:"latest",style:"ticks"});
+    send({ticks:state.symbol,subscribe:1});
+  };
+
+  ws.onmessage=event=>{
+    if(state.ws!==ws)return;
+    let data;
+    try{data=JSON.parse(event.data)}catch(e){
+      log("Resposta recebida não é JSON válido.");
+      return;
+    }
+    if(data.error){
+      log("Erro da API: "+data.error.message);
+      if(data.req_id && data.echo_req && data.echo_req.contracts_for){
+        $("contractStatus").textContent="Não foi possível verificar contratos: "+data.error.message;
+      }
+      if(data.req_id && data.echo_req && data.echo_req.active_symbols){
+        detail("A API recusou a lista de ativos: "+data.error.message);
+      }
+      return;
     }
 
-    state.connected = false;
-    state.contractChecked = false;
-    state.contractAvailable = false;
-
-    setConn("Conectando...", false);
-    $("connect").textContent = "Conectando...";
-
-    const endpoint = "wss://ws.derivws.com/websockets/v3?app_id=1089";
-    const ws = new WebSocket(endpoint);
-    state.ws = ws;
-
-    ws.onopen = function () {
-      state.connected = true;
-      setConn("Conectado — buscando ativo...", true);
-      $("connect").textContent = "Conectado";
-      ws.send(JSON.stringify({
-        active_symbols: "brief",
-        req_id: ++state.req
-      }));
-    };
-
-    ws.onmessage = function (event) {
-      let data;
-
-      try {
-        data = JSON.parse(event.data);
-      } catch (e) {
-        return;
-      }
-
-      if (data.error) {
-        setConn("Erro: " + data.error.message, false);
-        return;
-      }
-
-      if (data.msg_type === "active_symbols" && data.active_symbols) {
-        const match = data.active_symbols.find(function (item) {
-          return /volatility 10 index/i.test(item.display_name || "");
-        });
-
-        if (!match) {
-          setConn("Volatility 10 não encontrado", false);
-          return;
-        }
-
-        state.symbol = match.symbol;
-
-        ws.send(JSON.stringify({
-          ticks: match.symbol,
-          subscribe: 1,
-          req_id: ++state.req
-        }));
-
-        setConn("Conectado — recebendo ticks", true);
-      }
-
-      if (data.msg_type === "tick" && data.tick) {
-        const price = Number(data.tick.quote);
-
-        if (Number.isFinite(price)) {
-          state.prices.push(price);
-
-          if (state.prices.length > 500) {
-            state.prices.shift();
-          }
-
-          if (typeof analyzeTicks === "function") {
-            analyzeTicks();
-          }
-        }
-      }
-    };
-
-    ws.onerror = function () {
-      setConn("Erro de conexão", false);
-    };
-
-    ws.onclose = function () {
-      state.connected = false;
-      setConn("Desconectado", false);
-      $("connect").textContent = "Conectar aos dados públicos";
-    };
-    disconnect(); state.prices=[];state.pending=[];state.lastSignal="AGUARDAR";
-    $("signal").textContent="AGUARDAR";$("signal").className="wait";$("reason").textContent="Conectando à fonte pública da Deriv…";
-    setConn("Conectando");$("connect").disabled=true;
-    try{state.ws=new WebSocket(endpoint)}catch(e){setConn("Falha na conexão");$("connect").disabled=false;return}
-    state.ws.onopen=()=>{state.connected=true;setConn("Conectado",true);$("connect").textContent="Reconectar";$("connect").disabled=false;send({active_symbols:"brief",product_type:"basic",req_id:++state.req});};
-    state.ws.onmessage=ev=>{
-      let d;try{d=JSON.parse(ev.data)}catch(e){return}
-      if(d.error){$("reason").textContent="Erro da fonte: "+d.error.message;setConn("Erro");return}
-      if(d.msg_type==="active_symbols"){
-        const list=(d.active_symbols||[]).filter(x=>/Volatility 10/i.test(x.display_name||""));
-        const sel=$("symbol");sel.innerHTML="";
-        if(!list.length){sel.innerHTML='<option value="">Volatility 10 não encontrado</option>';$("reason").textContent="A fonte não retornou o Volatility 10. Tente reconectar ou confira o nome do índice na Deriv.";return}
-        list.sort((a,b)=>((a.display_name||"").includes("(1s)")?1:0)-((b.display_name||"").includes("(1s)")?1:0));
-        for(const x of list){const o=document.createElement("option");o.value=x.symbol;o.textContent=x.display_name+" ("+x.symbol+")";sel.appendChild(o)}
-        const exact=list.find(x=>/^Volatility 10 Index$/i.test(x.display_name||""))||list.find(x=>!/1s/i.test(x.display_name||""))||list[0];sel.value=exact.symbol;state.selectedSymbol=exact.symbol;
-        $("contractStatus").textContent="Verificando disponibilidade de Rise/Fall e duração em ticks…";
-        send({contracts_for:exact.symbol,product_type:"basic",req_id:++state.req});
-      }
-      if(d.msg_type==="contracts_for"){
-        const symbol=d.echo_req && d.echo_req.contracts_for;
-        if(symbol && symbol!==state.selectedSymbol)return;
-        const available=(d.contracts_for && d.contracts_for.available)||[];
-        const matching=available.filter(c=>["CALL","PUT","RISE","FALL"].includes(String(c.contract_type||"").toUpperCase()));
-        const durationTicks=value=>{const m=String(value||"").match(/^(\d+)\s*t$/i);return m?Number(m[1]):null;};
-        const tenTickContracts=matching.filter(c=>{
-          const min=durationTicks(c.min_contract_duration),max=durationTicks(c.max_contract_duration);
-          return min!==null && max!==null && min<=10 && max>=10;
-        });
-        state.contractChecked=true;state.contractAvailable=tenTickContracts.length>0;
-        if(state.contractAvailable){
-          const details=tenTickContracts.map(c=>(c.contract_display||c.contract_type)+" ("+(c.min_contract_duration||"?")+"–"+(c.max_contract_duration||"?")+")").join(", ");
-          $("contractStatus").textContent="10 ticks confirmado na lista de contratos: "+details+". A simulação mede direção do preço; não compra contrato.";
-        }else{
-          $("contractStatus").textContent="Não foi possível confirmar duração exatamente de 10 ticks nos contratos Rise/Fall deste símbolo. A página ainda pode analisar ticks, mas não declara a expiração disponível.";
-        }
-        startTicks();
-      }
-      if(d.msg_type==="tick" && d.tick){
-        const p=Number(d.tick.quote);if(!Number.isFinite(p))return;
-        state.prices.push(p);if(state.prices.length>300)state.prices.shift();
-        $("price").textContent=fmt(p);$("ticksCount").textContent=state.prices.length+" ticks recebidos";
-        updatePending(p);analyze();
-      }
-    };
-    state.ws.onerror=()=>{setConn("Erro de conexão");$("reason").textContent="Não foi possível abrir o WebSocket público (ws.derivws.com). Confira a internet e tente abrir esta página hospedada em HTTPS, pois alguns navegadores restringem conexões de arquivos locais (content://). Se persistir, podemos testar a conexão em uma página publicada.";$("connect").disabled=false;};
-    state.ws.onclose=()=>{state.connected=false;setConn("Desconectado");$("connect").disabled=false;if(state.prices.length===0 && $("reason").textContent.includes("Conectando")) $("reason").textContent="A conexão foi encerrada antes de receber dados. Tente novamente no Chrome com a internet ativa.";};
-  }
-  function startTicks(){const sym=$("symbol").value;if(!sym)return;state.symbol=sym;state.prices=[];state.pending=[];state.lastSignal="AGUARDAR";send({ticks:sym,subscribe:1,req_id:++state.req});$("reason").textContent="Recebendo ticks de "+sym+"; aguardando dados suficientes.";}
-  function ema(arr,period){if(arr.length<period)return null;let v=arr.slice(0,period).reduce((a,b)=>a+b,0)/period;const k=2/(period+1);for(let i=period;i<arr.length;i++)v=arr[i]*k+v*(1-k);return v;}
-  function rsi(arr,period=14){if(arr.length<period+1)return null;let gain=0,loss=0;for(let i=arr.length-period;i<arr.length;i++){const d=arr[i]-arr[i-1];if(d>0)gain+=d;else loss-=d;}if(loss===0)return gain===0?50:100;const rs=(gain/period)/(loss/period);return 100-100/(1+rs);}
-  function analyze(){
-    const a=state.prices,n=a.length;if(n<30){$("reason").textContent=`Coletando dados: ${n}/30 ticks necessários.`;return}
-    const e9=ema(a.slice(-100),9),e21=ema(a.slice(-100),21),rv=rsi(a.slice(-30),14),mom=a[n-1]-a[n-6];
-    $("emas").textContent=fmt(e9)+" / "+fmt(e21);$("rsi").textContent=rv.toFixed(1);$("momentum").textContent=(mom>0?"+":"")+fmt(mom);
-    const strict=$("threshold").value==="strict";
-    const rise=e9>e21 && a[n-1]>e9 && mom>0 && rv>=(strict?55:52) && rv<=(strict?65:70);
-    const fall=e9<e21 && a[n-1]<e9 && mom<0 && rv<=(strict?45:48) && rv>=(strict?35:30);
-    let sig=rise?"RISE":fall?"FALL":"AGUARDAR";
-    let reason=sig==="RISE"?"EMAs alinhadas para alta, momentum positivo e RSI dentro da faixa.":sig==="FALL"?"EMAs alinhadas para baixa, momentum negativo e RSI dentro da faixa.":"Filtros não concordam ou movimento sem confirmação.";
-    $("signal").textContent=sig;$("signal").className=sig==="RISE"?"rise":sig==="FALL"?"fall":"wait";$("reason").textContent=reason;
-    $("signalBox").style.background=sig==="RISE"?"#12382f":sig==="FALL"?"#40242d":"#252e3e";
-    if(sig!=="AGUARDAR" && sig!==state.lastSignal && state.pending.length===0){
-      const rec={time:new Date().toLocaleTimeString("pt-BR"),signal:sig,entry:a[n-1],remaining:10,exit:null,result:"Aguardando 10 ticks"};
-      state.signals.unshift(rec);if(state.signals.length>50)state.signals.pop();state.pending.push(rec);renderHistory();
+    if(data.msg_type==="ping"){
+      log("Servidor respondeu ao teste de conexão.");
     }
-    state.lastSignal=sig;
-  }
-  function updatePending(price){
-    for(const rec of [...state.pending]){
-      rec.remaining--;
-      if(rec.remaining<=0){
-        rec.exit=price;
-        if(price===rec.entry){rec.result="Empate";state.ties++}
-        else if((rec.signal==="RISE"&&price>rec.entry)||(rec.signal==="FALL"&&price<rec.entry)){rec.result="Acerto";state.wins++}
-        else{rec.result="Erro";state.losses++}
-        state.pending=state.pending.filter(x=>x!==rec);
+
+    if(data.msg_type==="active_symbols"){
+      const list=data.active_symbols||[];
+      const found=list.find(x=>x.symbol===state.symbol);
+      if(found){
+        log("Ativo confirmado na lista pública: "+found.display_name+" ("+found.symbol+").");
+      }else{
+        log("Aviso: o símbolo "+state.symbol+" não apareceu na lista active_symbols.");
       }
     }
-    $("tested").textContent=state.wins+state.losses+state.ties;
-    $("winslosses").textContent=state.wins+" / "+state.losses;$("ties").textContent=state.ties;
-    const total=state.wins+state.losses;$("winrate").textContent=total?((state.wins/total)*100).toFixed(1)+"%":"—";
-    renderHistory();
-  }
-  function renderHistory(){
-    const body=$("history");body.innerHTML="";
-    if(!state.signals.length){body.innerHTML='<tr><td colspan="5" class="empty">Nenhum sinal registrado ainda.</td></tr>';return}
-    for(const x of state.signals.slice(0,20)){
-      const tr=document.createElement("tr");
-      const vals=[x.time,x.signal,fmt(x.entry),x.exit===null?"—":fmt(x.exit),x.result];
-      vals.forEach((v,i)=>{const td=document.createElement("td");td.textContent=v;if(i===1)td.className=x.signal==="RISE"?"rise":"fall";if(i===4&&v==="Acerto")td.className="rise";if(i===4&&v==="Erro")td.className="fall";tr.appendChild(td)});
-      body.appendChild(tr);
+
+    if(data.msg_type==="contracts_for"){
+      checkContracts(data.contracts_for);
     }
+
+    if(data.msg_type==="history" && data.history && Array.isArray(data.history.prices)){
+      data.history.prices.forEach(p=>addPrice(Number(p),false));
+      log("Histórico inicial recebido: "+data.history.prices.length+" preços.");
+      updateIndicators();
+    }
+
+    if(data.msg_type==="tick" && data.tick){
+      addPrice(Number(data.tick.quote),true);
+    }
+  };
+
+  ws.onerror=()=>{
+    if(state.ws!==ws)return;
+    log("Erro de rede no WebSocket. O navegador pode não mostrar detalhes adicionais.");
+    detail("Falha na conexão. Verifique internet, navegador e acesso ao WebSocket.");
+    status("Erro de conexão");
+    $("connect").disabled=false;
+  };
+
+  ws.onclose=event=>{
+    if(state.ws!==ws)return;
+    state.ws=null;
+    clearTimeout(state.connectTimer);
+    status("Desconectado");
+    detail("Conexão encerrada (código "+event.code+"). Toque em conectar para tentar novamente.");
+    log("WebSocket fechado. Código: "+event.code+".");
+    $("connect").disabled=false;
+  };
+}
+
+function checkContracts(info){
+  state.contractChecked=true;
+  const contracts=info && info.available;
+  if(!Array.isArray(contracts)){
+    state.contractAvailable=false;
+    $("contractStatus").textContent="A API não retornou uma lista de contratos que permita confirmar 10 ticks.";
+    log("Resposta contracts_for sem a lista available esperada.");
+    return;
   }
-  $("connect").addEventListener("click",connect);
-  $("symbol").addEventListener("change",()=>{if(state.connected){send({forget:"ticks",req_id:++state.req});state.selectedSymbol=$("symbol").value;$("contractStatus").textContent="Verificando disponibilidade de Rise/Fall e duração em ticks…";send({contracts_for:state.selectedSymbol,product_type:"basic",req_id:++state.req});}});
-  $("threshold").addEventListener("change",()=>{state.lastSignal="AGUARDAR";analyze()});
-  $("clear").addEventListener("click",()=>{state.signals=[];state.wins=0;state.losses=0;state.ties=0;state.pending=[];$("tested").textContent="0";$("winslosses").textContent="0 / 0";$("ties").textContent="0";$("winrate").textContent="—";renderHistory()});
-})();
+  const candidates=contracts.filter(c=>{
+    const type=String(c.contract_type||"").toUpperCase();
+    return ["CALL","PUT","RISE","FALL"].includes(type);
+  });
+  const tickContracts=candidates.filter(c=>{
+    const unit=String(c.expiry_type||c.duration_unit||c.unit||"").toLowerCase();
+    const min=Number(c.min_contract_duration);
+    const max=Number(c.max_contract_duration);
+    const text=[c.contract_display,c.contract_category_display,c.contract_type].join(" ").toLowerCase();
+    const durationSaysTicks=/tick/.test(text);
+    return (unit==="t" || unit==="ticks" || durationSaysTicks) &&
+      (!Number.isFinite(min)||min<=10) &&
+      (!Number.isFinite(max)||max>=10);
+  });
+
+  state.contractAvailable=tickContracts.length>0;
+  if(state.contractAvailable){
+    $("contractStatus").textContent="A API listou contratos Rise/Fall compatíveis com ticks. Confira a informação antes de operar; este painel continua apenas simulando.";
+    log("Encontrados tipos de contrato compatíveis com duração em ticks.");
+  }else{
+    $("contractStatus").textContent="Não foi possível confirmar Rise/Fall com expiração de 10 ticks na resposta recebida. Os sinais serão apenas análises de preço, sem validar contrato.";
+    log("Não foi possível confirmar 10 ticks. Não considerar a duração validada.");
+  }
+}
+
+function addPrice(price,live){
+  if(!Number.isFinite(price))return;
+  const previous=state.prices.length;
+  if(previous && state.prices[previous-1]===price && !live)return;
+  state.prices.push(price);
+  if(state.prices.length>600)state.prices.shift();
+  $("price").textContent=price.toFixed(4);
+  if(live)updateIndicators();
+  settlePending();
+}
+function ema(values,period){
+  if(values.length<period)return null;
+  const k=2/(period+1);
+  let result=values.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<values.length;i++)result=values[i]*k+result*(1-k);
+  return result;
+}
+function rsi(values,period=14){
+  if(values.length<=period)return null;
+  let gain=0,loss=0;
+  for(let i=values.length-period;i<values.length;i++){
+    const d=values[i]-values[i-1];
+    if(d>0)gain+=d;else loss-=d;
+  }
+  if(loss===0)return gain===0?50:100;
+  return 100-100/(1+gain/loss);
+}
+function updateIndicators(){
+  const p=state.prices;
+  const e9=ema(p,9),e21=ema(p,21),rv=rsi(p);
+  $("ema9").textContent=e9===null?"—":e9.toFixed(4);
+  $("ema21").textContent=e21===null?"—":e21.toFixed(4);
+  $("rsi").textContent=rv===null?"—":rv.toFixed(1);
+  const mom=p.length>=6?p[p.length-1]-p[p.length-6]:null;
+  $("momentum").textContent="Momentum (5 ticks): "+(mom===null?"—":mom.toFixed(4));
+  if(p.length<30 || e9===null || e21===null || rv===null){
+    $("signal").textContent="AGUARDAR";
+    $("reason").textContent="Coletando pelo menos 30 ticks para calcular os indicadores.";
+    return;
+  }
+  const strict=$("threshold").value==="strict";
+  let sig="AGUARDAR",why="Filtros ainda não confirmam uma direção.";
+  const riseRsi=strict?rv>=55&&rv<=65:rv>=52&&rv<=70;
+  const fallRsi=strict?rv>=35&&rv<=45:rv>=30&&rv<=48;
+  if(e9>e21 && mom>0 && riseRsi){
+    sig="RISE";why="EMA 9 acima da EMA 21, momentum positivo e RSI dentro do filtro.";
+  }else if(e9<e21 && mom<0 && fallRsi){
+    sig="FALL";why="EMA 9 abaixo da EMA 21, momentum negativo e RSI dentro do filtro.";
+  }
+  $("signal").textContent=sig;
+  $("signal").className="signal "+(sig==="RISE"?"good":sig==="FALL"?"bad":"");
+  $("reason").textContent=why;
+  state.lastSignal=sig;
+
+  if(sig!=="AGUARDAR" && state.prices.length-state.lastEntryTick>=10){
+    state.lastEntryTick=state.prices.length;
+    state.pending.push({entry:p[p.length-1],signal:sig,tickIndex:state.prices.length});
+    state.rows.unshift({entry:p[p.length-1],signal:sig,exit:null,result:"PENDENTE"});
+    state.rows=state.rows.slice(0,20);
+    renderRows();
+    log("Sinal simulado: "+sig+" a "+p[p.length-1]+". Avaliação após 10 ticks.");
+  }
+}
+function settlePending(){
+  const current=state.prices.length;
+  for(const item of [...state.pending]){
+    if(current-item.tickIndex<10)continue;
+    const exit=state.prices[current-1];
+    let result="EMPATE";
+    if(exit>item.entry)result=item.signal==="RISE"?"ACERTO":"ERRO";
+    if(exit<item.entry)result=item.signal==="FALL"?"ACERTO":"ERRO";
+    if(result==="ACERTO")state.wins++;
+    else if(result==="ERRO")state.losses++;
+    else state.ties++;
+    const row=state.rows.find(r=>r.entry===item.entry && r.signal===item.signal && r.exit===null);
+    if(row){row.exit=exit;row.result=result}
+    state.pending=state.pending.filter(x=>x!==item);
+  }
+  $("total").textContent=state.wins+state.losses+state.ties;
+  $("wins").textContent=state.wins;
+  $("losses").textContent=state.losses;
+  $("ties").textContent=state.ties;
+  renderRows();
+}
+function renderRows(){
+  if(!state.rows.length)return;
+  $("history").innerHTML=state.rows.map(r=>
+    "<tr><td>"+r.entry.toFixed(4)+"</td>"+
+    "<td class='"+(r.signal==="RISE"?"good":"bad")+"'>"+r.signal+"</td>"+
+    "<td>"+(r.exit===null?"Aguardando…":r.exit.toFixed(4))+"</td>"+
+    "<td>"+r.result+"</td></tr>"
+  ).join("");
+}
+$("connect").addEventListener("click",connect);
+$("disconnect").addEventListener("click",disconnect);
+$("symbol").addEventListener("change",()=>{
+  if(state.ws)connect();
+});
+$("threshold").addEventListener("change",updateIndicators);
+window.addEventListener("pagehide",()=>{
+  if(state.ws){try{state.ws.close()}catch(e){}}
+});
 </script>
 </body>
 </html>
